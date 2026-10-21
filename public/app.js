@@ -1,4 +1,3 @@
-// AirDroid Parent Web Dashboard Client
 const TARGET_DEVICE_ID = 'AIR-KID-8831';
 let serverState = {
   devices: {},
@@ -8,7 +7,6 @@ let serverState = {
 
 let ws = null;
 
-// Initialize WebSocket connection to same host
 function initWebSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}`;
@@ -16,9 +14,10 @@ function initWebSocket() {
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
-    document.getElementById('wsStatusText').innerText = 'Connected to Render';
-    document.querySelector('.server-status-card .status-indicator').className = 'status-indicator live';
-    // Identify as Parent Web Client
+    const textEl = document.getElementById('wsStatusText');
+    if (textEl) textEl.innerText = 'Connected to Render';
+    const ind = document.querySelector('.server-status-card .status-indicator');
+    if (ind) ind.className = 'status-indicator live';
     ws.send(JSON.stringify({ type: 'IDENTIFY', role: 'PARENT' }));
   };
 
@@ -48,13 +47,14 @@ function initWebSocket() {
   };
 
   ws.onclose = () => {
-    document.getElementById('wsStatusText').innerText = 'Reconnecting...';
-    document.querySelector('.server-status-card .status-indicator').className = 'status-indicator danger';
+    const textEl = document.getElementById('wsStatusText');
+    if (textEl) textEl.innerText = 'Reconnecting...';
+    const ind = document.querySelector('.server-status-card .status-indicator');
+    if (ind) ind.className = 'status-indicator danger';
     setTimeout(initWebSocket, 3000);
   };
 }
 
-// REST fallback fetch
 async function fetchServerState() {
   try {
     const res = await fetch('/api/parent/state');
@@ -71,46 +71,62 @@ function updateUI() {
   const device = serverState.devices[TARGET_DEVICE_ID] || Object.values(serverState.devices)[0];
   if (!device) return;
 
-  // Battery
-  document.getElementById('batteryVal').innerText = `${device.batteryLevel || 82}%`;
-  document.getElementById('phoneBatText').innerText = `${device.batteryLevel || 82}%`;
+  const batEl = document.getElementById('batteryVal');
+  if (batEl) batEl.innerText = `${device.batteryLevel || 82}%`;
 
-  // Online
+  const phoneBatEl = document.getElementById('phoneBatText');
+  if (phoneBatEl) phoneBatEl.innerText = `${device.batteryLevel || 82}%`;
+
   const isOnline = device.isOnline !== false;
-  document.getElementById('onlineVal').innerText = isOnline ? 'ONLINE' : 'OFFLINE';
-  document.getElementById('onlineIndicator').className = isOnline ? 'status-indicator live' : 'status-indicator';
+  const onlineEl = document.getElementById('onlineVal');
+  if (onlineEl) onlineEl.innerText = isOnline ? 'ONLINE' : 'OFFLINE';
 
-  // Active App
+  const onInd = document.getElementById('onlineIndicator');
+  if (onInd) onInd.className = isOnline ? 'status-indicator live' : 'status-indicator';
+
   const appName = device.activeAppName || 'Home Screen';
-  document.getElementById('activeAppVal').innerText = appName;
-  document.getElementById('phoneAppTitle').innerText = appName;
-  document.getElementById('fullActiveAppName').innerText = appName;
+  const activeAppEl = document.getElementById('activeAppVal');
+  if (activeAppEl) activeAppEl.innerText = appName;
 
-  // Lock status
+  const phoneTitleEl = document.getElementById('phoneAppTitle');
+  if (phoneTitleEl) phoneTitleEl.innerText = appName;
+
+  const fullActiveEl = document.getElementById('fullActiveAppName');
+  if (fullActiveEl) fullActiveEl.innerText = appName;
+
   const isLocked = device.isDeviceLocked === true;
-  document.getElementById('lockStatusVal').innerText = isLocked ? 'LOCKED' : 'ACTIVE';
-  document.getElementById('lockStatusVal').style.color = isLocked ? '#E53935' : '#00A86B';
+  const lockStatusEl = document.getElementById('lockStatusVal');
+  if (lockStatusEl) {
+    lockStatusEl.innerText = isLocked ? 'LOCKED' : 'ACTIVE';
+    lockStatusEl.style.color = isLocked ? '#E53935' : '#00A86B';
+  }
 
   const btnLock = document.getElementById('btnLockToggle');
   const btnText = document.getElementById('lockButtonText');
-  if (isLocked) {
-    btnText.innerText = 'Unlock Child Phone';
-    btnLock.className = 'btn btn-primary';
-  } else {
-    btnText.innerText = 'Lock Child Phone';
-    btnLock.className = 'btn btn-danger';
+  if (btnLock && btnText) {
+    if (isLocked) {
+      btnText.innerText = 'Unlock Child Phone';
+      btnLock.className = 'btn btn-primary';
+    } else {
+      btnText.innerText = 'Lock Child Phone';
+      btnLock.className = 'btn btn-danger';
+    }
   }
 
-  // Alerts
   const activeAlerts = serverState.alerts.filter(a => !a.isDismissed);
-  document.getElementById('alertsBadge').innerText = activeAlerts.length;
+  const badgeEl = document.getElementById('alertsBadge');
+  if (badgeEl) badgeEl.innerText = activeAlerts.length;
 
-  if (activeAlerts.length > 0) {
-    const top = activeAlerts[0];
-    document.getElementById('recentAlertCard').style.display = 'flex';
-    document.getElementById('recentAlertMsg').innerText = `Flagged keyword "${top.matchedKeyword}" intercepted in ${top.appSource} from ${top.sender}`;
-  } else {
-    document.getElementById('recentAlertCard').style.display = 'none';
+  const recentCard = document.getElementById('recentAlertCard');
+  const recentMsg = document.getElementById('recentAlertMsg');
+  if (recentCard && recentMsg) {
+    if (activeAlerts.length > 0) {
+      const top = activeAlerts[0];
+      recentCard.style.display = 'flex';
+      recentMsg.innerText = `Flagged keyword "${top.matchedKeyword}" intercepted in ${top.appSource} from ${top.sender}`;
+    } else {
+      recentCard.style.display = 'none';
+    }
   }
 
   renderAlertsTable(activeAlerts);
@@ -173,7 +189,6 @@ function renderAppLimits(rules) {
   }
 }
 
-// Remote Commands
 async function sendCommand(action, params = {}) {
   const payload = {
     deviceId: TARGET_DEVICE_ID,
@@ -214,20 +229,23 @@ function toggleAppBlock(packageName, isBlocked) {
   sendCommand('BLOCK_APP', { packageName, isBlocked });
 }
 
-// Lock Button Listener
-document.getElementById('btnLockToggle').addEventListener('click', () => {
-  const device = serverState.devices[TARGET_DEVICE_ID];
-  const currentlyLocked = device ? device.isDeviceLocked : false;
-  sendCommand(currentlyLocked ? 'UNLOCK_DEVICE' : 'LOCK_DEVICE');
-});
+const btnLock = document.getElementById('btnLockToggle');
+if (btnLock) {
+  btnLock.addEventListener('click', () => {
+    const device = serverState.devices[TARGET_DEVICE_ID];
+    const currentlyLocked = device ? device.isDeviceLocked : false;
+    sendCommand(currentlyLocked ? 'UNLOCK_DEVICE' : 'LOCK_DEVICE');
+  });
+}
 
-// Clear Resolved Alerts
-document.getElementById('btnClearAlerts').addEventListener('click', () => {
-  serverState.alerts.forEach(a => a.isDismissed = true);
-  updateUI();
-});
+const btnClear = document.getElementById('btnClearAlerts');
+if (btnClear) {
+  btnClear.addEventListener('click', () => {
+    serverState.alerts.forEach(a => a.isDismissed = true);
+    updateUI();
+  });
+}
 
-// Tabs Navigation
 function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -247,8 +265,10 @@ function switchTab(tabId) {
   };
 
   if (titles[tabId]) {
-    document.getElementById('pageTitle').innerText = titles[tabId][0];
-    document.getElementById('pageSubtitle').innerText = titles[tabId][1];
+    const titleEl = document.getElementById('pageTitle');
+    const subEl = document.getElementById('pageSubtitle');
+    if (titleEl) titleEl.innerText = titles[tabId][0];
+    if (subEl) subEl.innerText = titles[tabId][1];
   }
 }
 
@@ -258,7 +278,6 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
   });
 });
 
-// Start
 initWebSocket();
 fetchServerState();
 setInterval(fetchServerState, 5000);

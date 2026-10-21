@@ -34,7 +34,6 @@ body {
   min-height: 100vh;
 }
 
-/* Sidebar */
 .sidebar {
   width: 260px;
   background: var(--surface);
@@ -139,7 +138,6 @@ body {
   color: var(--text-muted);
 }
 
-/* Status Indicator Dot */
 .status-indicator {
   width: 10px;
   height: 10px;
@@ -156,7 +154,6 @@ body {
   background: var(--danger);
 }
 
-/* Main Content */
 .main-content {
   flex: 1;
   padding: 32px;
@@ -180,7 +177,6 @@ body {
   font-size: 0.85rem;
 }
 
-/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -223,7 +219,6 @@ body {
   background: var(--surface-alt);
 }
 
-/* Cards & Grid */
 .card {
   background: var(--surface);
   border-radius: 20px;
@@ -266,7 +261,6 @@ body {
   color: var(--text-muted);
 }
 
-/* Alert Banner */
 .alert-banner {
   background: var(--danger-light);
   border: 1px solid rgba(229, 57, 53, 0.3);
@@ -326,7 +320,6 @@ body {
   gap: 24px;
 }
 
-/* Phone Mockup Screen */
 .mini-screen-container {
   display: flex;
   justify-content: center;
@@ -381,7 +374,6 @@ body {
   color: #8FA699;
 }
 
-/* Full Screen Viewer */
 .full-screen-wrapper {
   display: flex;
   justify-content: center;
@@ -442,7 +434,6 @@ body {
   color: var(--primary-dark);
 }
 
-/* Alerts Table */
 .alerts-table {
   display: flex;
   flex-direction: column;
@@ -482,7 +473,6 @@ body {
   border-radius: 4px;
 }
 
-/* App Rules Manager */
 .app-rules-manager {
   display: flex;
   flex-direction: column;
@@ -509,7 +499,6 @@ body {
   color: var(--text-muted);
 }
 
-/* Code block box */
 .code-block-box {
   background: var(--surface-alt);
   border-radius: 14px;
@@ -533,7 +522,6 @@ body {
   margin: 6px 0;
 }
 
-/* Tabs */
 .tab-content {
   display: none;
 }

@@ -9,7 +9,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 3000;
-const FIREBASE_DB_URL = process.env.FIREBASE_DB_URL || ''; // Optional: https://<PROJECT_ID>.firebaseio.com
+const FIREBASE_DB_URL = process.env.FIREBASE_DB_URL || '';
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -44,7 +44,7 @@ const state = {
       isDismissed: false
     }
   ],
-  commands: {}, // deviceId -> [command objects]
+  commands: {},
   appRules: {
     'AIR-KID-8831': [
       { packageName: 'com.mock.tiktok', appName: 'TikVid Stream', dailyLimitMinutes: 45, usedMinutesToday: 40, isBlocked: false },
@@ -56,17 +56,15 @@ const state = {
   latestFrames: {}
 };
 
-// WebSocket connections mapping
 const clients = {
   parents: new Set(),
-  children: new Map() // deviceId -> WebSocket
+  children: new Map()
 };
 
-// Optional helper to sync data to Firebase Realtime Database via REST
-async function syncToFirebase(path, data) {
+async function syncToFirebase(pathKey, data) {
   if (!FIREBASE_DB_URL) return;
   try {
-    const url = `${FIREBASE_DB_URL.replace(/\/$/, '')}/${path}.json`;
+    const url = `${FIREBASE_DB_URL.replace(/\/$/, '')}/${pathKey}.json`;
     await fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -77,8 +75,7 @@ async function syncToFirebase(path, data) {
   }
 }
 
-// WebSocket Signaling & Real-Time Events
-wss.on('connection', (ws, req) => {
+wss.on('connection', (ws) => {
   let clientRole = null;
   let clientDeviceId = null;
 
@@ -87,7 +84,7 @@ wss.on('connection', (ws, req) => {
       const payload = JSON.parse(message);
       
       if (payload.type === 'IDENTIFY') {
-        clientRole = payload.role; // 'PARENT' or 'CHILD'
+        clientRole = payload.role;
         if (clientRole === 'PARENT') {
           clients.parents.add(ws);
           ws.send(JSON.stringify({ type: 'INIT_STATE', data: state }));
@@ -124,12 +121,10 @@ wss.on('connection', (ws, req) => {
         state.latestFrames[payload.deviceId] = payload.frame;
         broadcastToParents({ type: 'SCREEN_FRAME', deviceId: payload.deviceId, frame: payload.frame });
       } else if (payload.type === 'PARENT_COMMAND') {
-        // Parent sent remote command (LOCK, UNLOCK, BLOCK_APP)
         const targetWs = clients.children.get(payload.deviceId);
         if (targetWs && targetWs.readyState === WebSocket.OPEN) {
           targetWs.send(JSON.stringify({ type: 'EXECUTE_COMMAND', command: payload.command }));
         } else {
-          // Queue command
           if (!state.commands[payload.deviceId]) state.commands[payload.deviceId] = [];
           state.commands[payload.deviceId].push(payload.command);
         }
@@ -161,7 +156,7 @@ function broadcastToParents(messageObj) {
   });
 }
 
-// REST Endpoints for Child Android App (works even without persistent WebSocket)
+// REST Endpoints for Child Android App
 app.post('/api/child/telemetry', (req, res) => {
   const { deviceId, battery, isCharging, isLocked, activeApp, activePackage, childName, modelName } = req.body;
   if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
@@ -187,7 +182,6 @@ app.post('/api/child/telemetry', (req, res) => {
   broadcastToParents({ type: 'TELEMETRY_UPDATE', device: state.devices[deviceId] });
   syncToFirebase(`devices/${deviceId}`, state.devices[deviceId]);
 
-  // Return any pending commands for the child device
   const queued = state.commands[deviceId] || [];
   state.commands[deviceId] = [];
 
@@ -234,7 +228,6 @@ app.post('/api/parent/command', (req, res) => {
 
   const command = { action, params, timestamp: Date.now() };
 
-  // Update server state accordingly
   if (action === 'LOCK_DEVICE') {
     if (state.devices[deviceId]) state.devices[deviceId].isDeviceLocked = true;
   } else if (action === 'UNLOCK_DEVICE') {
@@ -245,7 +238,6 @@ app.post('/api/parent/command', (req, res) => {
     if (found) found.isBlocked = params.isBlocked;
   }
 
-  // Push via WebSocket if child is connected
   const childWs = clients.children.get(deviceId);
   if (childWs && childWs.readyState === WebSocket.OPEN) {
     childWs.send(JSON.stringify({ type: 'EXECUTE_COMMAND', command }));
@@ -271,10 +263,5 @@ app.post('/api/parent/dismiss-alert', (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(` AirDroid Parental Control Server Running`);
-  console.log(` Local URL: http://localhost:${PORT}`);
-  console.log(` Deploy Target: Render.com (Node Web Service)`);
-  console.log(` WebSocket Signaling: Active on ws://localhost:${PORT}`);
-  console.log(`===============================================`);
+  console.log(`AirDroid Parental Control Server running on port ${PORT}`);
 });

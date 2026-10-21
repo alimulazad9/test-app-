@@ -1,5 +1,5 @@
 {
-  "name": "airdroid-control-server",
+  "name": "airdroid-parental-server",
   "version": "1.0.0",
   "description": "AirDroid Parental Control signaling & telemetry backend for Render with Parent Web Dashboard",
   "main": "server.js",
