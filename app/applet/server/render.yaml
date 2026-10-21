@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: airdroid-parental-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FIREBASE_DB_URL
+        sync: false
